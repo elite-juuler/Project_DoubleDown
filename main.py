@@ -1,4 +1,5 @@
 import random
+import time
 
 def Clubs(Deck):
     ClubList = []
@@ -51,7 +52,8 @@ def next_card(shoe,currHand,currHandSum):
     pulled_card = shoe.pop()
     currHand.append(pulled_card)
     cardValue = card_value(pulled_card)
-    return currHand, currHandSum + cardValue
+    new_hand_sum = currHandSum + cardValue
+    return currHand, new_hand_sum
 
 
 def deal(deck): # gives the player then dealer a card 2x
@@ -66,17 +68,52 @@ def deal(deck): # gives the player then dealer a card 2x
     # DealerHand.append(next_card(shoe))
     # dealerHandTotal = card_value(DealerHand)
     # print(f"DealerHand: {DealerHand} | Dealer total: {dealerHandTotal}")
-    print(f"Dealer: {DealerHand[1]} | {card_value(DealerHand[1])}")
-    print(f"PlayerHand: {PlayerHand} | {p1HandTotal}")
+    # print(f"Dealer: {DealerHand[1]} | {card_value(DealerHand[1])}")
+    # print(f"PlayerHand: {PlayerHand} | {p1HandTotal}")
     return DealerHand, dealerHandTotal, PlayerHand,p1HandTotal
+
+def dealer_check_hole_card(DealerHand,dealerHandTotal):
+    print(f"Uh-oh, Dealer showing {card_value(DealerHand[1])}!")
+    time.sleep(2.5)
+    print("Checking hole card...")
+    time.sleep(1)
+    if dealerHandTotal == 21:
+        print("Ouch! Dealer has Blackjack 😡")
+        return "Home"
+    else: 
+        print("Whew, Dealer does not have Blackjack 😤")
+        return "NotHome"
+
+def offer_insurance(): # block that defines actions to take for players taking insurance
+    # insurance offered here
+    if input("Take insurance? Y/N: ") != "Y":
+        return "N"
+    else:
+        return "Y"
+
+def end_of_hand(): # block that defines actions to take based on final hand scores
+    print(">>>Hand is over.")
+    p1HandTotal = 0
+
+def play_hand(deck,PlayerHand,p1HandTotal): # block of code that defines the playing of a hand
+    while p1HandTotal <= 21:
+        playerAction = input(f"Hand total: {p1HandTotal} - Hit or Stand? ")
+        if playerAction == "Hit":
+            PlayerHand, p1HandTotal = player_hit(deck,PlayerHand,p1HandTotal)
+            print(f"PlayerHand: {PlayerHand}")
+        else: # playerAction = STAND
+            break
+    if p1HandTotal > 21:
+        print("BUST! You lose ☹")
+
+def dealer_actions(): # block of code that defines what the dealer can do
+    end_of_hand()
 
 def player_hit(deck,PlayerHand,p1HandTotal):
     shoe = deck
-    next_card(shoe,PlayerHand,p1HandTotal)
+    PlayerHand, p1HandTotal = next_card(shoe,PlayerHand,p1HandTotal)
     return PlayerHand, p1HandTotal
     
-
-
 # Main Program
 
 cardRanks = [2,3,4,5,6,7,8,9,10,'J','Q','K','A']
@@ -85,8 +122,43 @@ deck = create_deck(cardRanks)
 # deal(deck) 
 DealerHand, dealerHandTotal, PlayerHand, p1HandTotal = deal(deck)
 
-# give player another card from deck
+print(f"Dealer: {DealerHand[1]} | {card_value(DealerHand[1])}") # dealer has a fair hand
+print(f"PlayerHand: {PlayerHand} | {p1HandTotal}")
 
-print(f"PlayerHand: {PlayerHand} | {p1HandTotal}") # not tested yet
-print("the end")
+# Checking for Blackjack
+# if Player dealt Blackjack
+if p1HandTotal == 21: # if player's first two cards sum to 21:
+    print("Blackjack!")
+    time.sleep(1)
+    if card_value(DealerHand[1]) == 10: # dealer shows 10, need to check for ace in hole
+        if dealer_check_hole_card(DealerHand,dealerHandTotal) == "Home":
+            # dealer and player have blackjack
+            print("PUSH! At least it's not a loss...") 
+    else: # Player has blackjack and dealer not showing a 10 
+        print("YES! Player wins!")
+        end_of_hand()
 
+# p1 <> blackjack and dealer shows 10
+elif card_value(DealerHand[1]) == 10:
+    if dealer_check_hole_card(DealerHand,dealerHandTotal) == "Home":
+        # dealer has blackjack
+        end_of_hand() # not yet built out
+    else:
+        # neither player has blackjack
+        play_hand(deck,PlayerHand,p1HandTotal)
+
+# dealer showing Ace        
+elif card_value(DealerHand[1]) == 11:
+    insurance = offer_insurance()
+    # no one takes insurance
+    if insurance != "Y":
+        if dealer_check_hole_card(DealerHand,dealerHandTotal) == "Home":
+            #dealer has Ace-up blackjack
+            end_of_hand()
+        else: 
+            # dealer does not have Ace-up blackjack
+            play_hand(deck,PlayerHand,p1HandTotal)
+    elif insurance != "Y": 
+        print("[Insurance was taken]")
+else: 
+    play_hand(deck,PlayerHand,p1HandTotal)
