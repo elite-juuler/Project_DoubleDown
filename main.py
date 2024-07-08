@@ -1,34 +1,6 @@
 import random
 import time
 
-def Clubs(Deck):
-    ClubList = []
-    for x in Deck:
-        x = str(x) + '♣'
-        ClubList.append(x)
-    return ClubList
-
-def Diamonds(Deck):
-    DiamondsList = []
-    for x in Deck:
-        x = str(x) + '♦'
-        DiamondsList.append(x)
-    return DiamondsList
-
-def Hearts(Deck):
-    HeartsList = []
-    for x in Deck:
-        x = str(x) + '♥'
-        HeartsList.append(x)
-    return HeartsList
-
-def Spades(Deck):
-    SpadesList = []
-    for x in Deck:
-        x = str(x) + '♠'
-        SpadesList.append(x)
-    return SpadesList
-
 def create_deck(cardRanks):
     suits = ['♣', '♦', '♥', '♠']
     ranks = cardRanks
@@ -38,60 +10,97 @@ def create_deck(cardRanks):
     # print(deck)
     return deck
 
-def card_value(card):
+def card_value(card,currHandSum):
     # print(f"Card is: {card}")
     card = str(card)[2:-3]
     if card in ['2','3','4','5','6','7','8','9']:
         return int(card)
     elif card in ['10','J','Q','K']:
         return 10
-    else: # Ace
+    else:  
         return 11
 
-def ace_value(cardInHand,currHandSum): # determine if ace is 11 or 1
-    if currHandSum + 11 > 21:
-        return 1
-    else: 
-        return 11
+def simplify_aces(currValues,currHandSum):
+    for value in currValues:
+        while currHandSum > 21:
+            if value == 11:
+                newVal = value - 10
+                currValues[currValues.index(value)] = newVal 
+                currHandSum -=10
+            else: 
+                break
+    # print(currValues)
+    return currValues, currHandSum
 
-def next_card(shoe,currHand,currHandSum):
+### not needed thanks to simplify_aces()
+# def decrease_last_ace(hand,total,num_aces):# if 11 would bust, ace is 1
+#     while num_aces > 0:
+#         if total > 21:
+#             total -=10
+#         num_aces -= 1
+#     return total
+
+### not in use thanks to simplify_aces()
+# def num_aces(hand): 
+#     num_aces = sum(1 for card in hand if str(card)[2:-3] == 'A')
+#     return num_aces
+
+def next_card(shoe,currHand,currValues,currHandSum):
     pulled_card = shoe.pop()
     currHand.append(pulled_card)
-    cardValue = card_value(pulled_card)
-    # """ if cardValue = 11:
-    #     cardValue = ace_value(currHand,currHandSum) """
-    new_hand_sum = currHandSum + cardValue
-    return currHand, new_hand_sum
+    cardValue = card_value(pulled_card,currHandSum)
+    currValues.append(cardValue)
+    currHandSum += cardValue
+    # currHandSum = decrease_last_ace(currHand,currHandSum, 1 if cardValue == 11 else 0)
+    if currHandSum > 21:
+        currValues, currHandSum = simplify_aces(currValues,currHandSum)
+    
+    # values back to main program
+    return currHand, currHandSum, currValues
 
 def deal(deck): # gives the player then dealer a card 2x
     PlayerHand = []
+    PlayerValues = []
     DealerHand = []
+    DealerValues = []
     shoe = deck
-    PlayerHand, playerHandTotal = next_card(shoe,PlayerHand,0)
-    DealerHand, dealerTotal = next_card(shoe,DealerHand,0)
-    PlayerHand, playerHandTotal = next_card(shoe,PlayerHand,playerHandTotal)
-    DealerHand, dealerTotal = next_card(shoe,DealerHand,dealerTotal)
-    # playerHandTotal = card_value(PlayerHand) 
-    # DealerHand.append(next_card(shoe))
-    # dealerTotal = card_value(DealerHand)
-    # print(f"DealerHand: {DealerHand} | Dealer total: {dealerTotal}")
-    # print(f"Dealer: {DealerHand[0]} | {card_value(DealerHand[0])}")
-    # print(f"PlayerHand: {PlayerHand} | {playerHandTotal}")
-    return DealerHand, dealerTotal, PlayerHand,playerHandTotal
+    PlayerHand, playerHandTotal, PlayerValues = next_card(shoe,PlayerHand,PlayerValues,0)
+    DealerHand, dealerTotal, DealerValues = next_card(shoe,DealerHand,DealerValues,0)
+    PlayerHand, playerHandTotal, PlayerValues = next_card(shoe,PlayerHand,PlayerValues,playerHandTotal)
+    DealerHand, dealerTotal, DealerValues = next_card(shoe,DealerHand,DealerValues,dealerTotal)
+    return DealerHand, dealerTotal, DealerValues, PlayerHand, playerHandTotal, PlayerValues
 
-def dealer_check_hole_card(DealerHand,dealerTotal):
-    print(f"Uh-oh, Dealer showing {card_value(DealerHand[0])}!")
-    time.sleep(1)
-    print("Checking hole card...")
-    time.sleep(1)
-    if dealerTotal == 21:
-        print("Ouch! Dealer has Blackjack 😡")
-        alive_bust = "bust" # maybe need to rename, but for now is just indicating that dealer does not need to take action
-        return "Home"
-    else: 
-        print("Whew, Dealer does not have Blackjack 😤")
-        alive_bust = "alive"
-        return "NotHome"
+def check_player_blackjack(playerHandTotal):
+    if card_value(PlayerHand[0],playerHandTotal) + card_value(PlayerHand[1],playerHandTotal) == 21:
+        return True
+    else:
+        return False
+
+# check_dealer_blackjack - handles dealer showing 10 and dealer showing Ace
+def check_dealer_blackjack(DealerHand,dealerTotal):
+    if card_value(DealerHand[0],dealerTotal) == 10:
+        print("Uh-oh, Dealer showing a 10!")
+        time.sleep(1)
+        print("Checking hole card...")
+        time.sleep(1)
+        if dealerTotal == 21:
+            print(f"Dealer: {dealerTotal} | {DealerHand}")
+            print("Ouch! Dealer has Blackjack 😡")
+            return True
+        else:
+            print("Dealer does not have Blackjack.")
+            return False
+    elif card_value(DealerHand[0],dealerTotal) == 11: 
+        print("Dealer showing an Ace!")
+        time.sleep(1)
+        offer_insurance()# offer insurance here
+        time.sleep(1)
+        if dealerTotal == 21:
+            print("Ouch! Dealer has Blackjack 😡")
+            return True
+        else:
+            print("Dealer does not have Blackjack.")
+            return False
 
 def offer_insurance(): # block that defines actions to take for players taking insurance
     # insurance offered here
@@ -116,22 +125,23 @@ def end_of_hand(dealerTotal,playerHandTotal): # block that compares scores and a
     # reset_hand() # not yet defined
     # playerHandTotal = 0
 
-def play_hand(deck,PlayerHand,playerHandTotal): # block of code that defines the playing of a hand
+def play_hand(deck,PlayerHand,currValues,playerHandTotal): # block of code that defines the playing of a hand
     while playerHandTotal <= 21:
         playerAction = input(f"Hand total: {playerHandTotal} - Hit or Stand? ")
         if playerAction == "Hit":
-            deck, PlayerHand, playerHandTotal = player_hit(deck,PlayerHand,playerHandTotal)
+            deck, PlayerHand, currValues, playerHandTotal = player_hit(deck,PlayerHand,currValues,playerHandTotal)
             print(f"PlayerHand: {PlayerHand} | {playerHandTotal}")
             time.sleep(1)
         else: # playerAction = STAND
-            alive_bust = "alive"
-            return deck, PlayerHand, playerHandTotal, alive_bust          
+            handAlive = True
+            return deck, PlayerHand, playerHandTotal, handAlive  
     if playerHandTotal > 21:
         print("BUST!")
-        alive_bust = "bust"
-        return deck, PlayerHand,playerHandTotal, alive_bust
+        handAlive = False
+        return deck, PlayerHand,playerHandTotal, handAlive
 
-def dealer_action_s17(deck,DealerHand,dealerTotal): # block of code that defines what the dealer will do
+# dealer hitting actions for Stand 17 rule variations
+def dealer_action_s17(deck,DealerHand,currValues,dealerTotal): 
     print("Flipping dealer's hole card...")
     time.sleep(1)
     print(f"Dealer hand: {DealerHand} | {dealerTotal}")
@@ -150,68 +160,50 @@ def dealer_action_s17(deck,DealerHand,dealerTotal): # block of code that defines
         print("Dealer BUSTS!")
         return deck, DealerHand, dealerTotal
 
-def player_hit(deck,PlayerHand,playerHandTotal):
+# pulls card from shoe and appends it to player's hand
+def player_hit(deck,PlayerHand,currValues,playerHandTotal):
     shoe = deck
-    PlayerHand, playerHandTotal = next_card(shoe,PlayerHand,playerHandTotal)
-    return deck, PlayerHand, playerHandTotal
+    PlayerHand, playerHandTotal, currValues = next_card(shoe,PlayerHand,currValues,playerHandTotal)
+    return deck, PlayerHand, currValues, playerHandTotal
     
-# Main Program
 
-cardRanks = [2,3,4,5,6,7,8,9,10,'J','Q','K','A']
+
+
+### Main Program ###
+
+# cardRanks = [2,3,4,5,6,7,8,9,10,'J','Q','K','A'] # true deck
+cardRanks = [9,'A'] # test for Ace logic
 deck = create_deck(cardRanks)
 
-# deal(deck) 
-DealerHand, dealerTotal, PlayerHand, playerHandTotal = deal(deck)
+# deal cards to player and dealer
+DealerHand, dealerTotal, DealerValues, PlayerHand, playerHandTotal, PlayerValues = deal(deck)
 
-print(f"Dealer: {DealerHand[0]} | {card_value(DealerHand[0])}") # dealer has a fair hand
+print(f"Dealer: {DealerHand[0]} | {card_value(DealerHand[0],dealerTotal)}") # dealer has a fair hand
 print(f"PlayerHand: {PlayerHand} | {playerHandTotal}")
 
-# Checking for Blackjack
-# if Player dealt Blackjack
-if playerHandTotal == 21: # if player's first two cards sum to 21:
-    alive_bust = "alive"
-    playerBJ = True
-    print("Blackjack!")
-    time.sleep(1)
-    if card_value(DealerHand[0]) == 10: # dealer shows 10, need to check for ace in hole
-        if dealer_check_hole_card(DealerHand,dealerTotal) == "Home":
-            # dealer and player have blackjack
-            alive_bust = "bust" # may need to be re-worked
-            print("PUSH! At least it's not a loss...")
-        else: # Player has blackjack and dealer not showing a 10 
-            print("YES!")
-           
+PlayerBJ = check_player_blackjack(playerHandTotal)
+DealerBJ = check_dealer_blackjack(DealerHand,dealerTotal)
 
-# p1 <> blackjack and dealer shows 10
-elif card_value(DealerHand[0]) == 10:
-    playerBJ = False
-    if dealer_check_hole_card(DealerHand,dealerTotal) == "Home":
-        # dealer has blackjack
-        alive_bust = "bust" # may need to be reworked
+time.sleep(1)
+### Procedures for when someone has Blackjack ###
+
+# player has blackjack, dealer does not
+if PlayerBJ == True and DealerBJ != True:
+    end_of_hand(dealerTotal,playerHandTotal)
+
+# player AND dealer have blackjack
+if PlayerBJ == True and DealerBJ == True:
+    end_of_hand(dealerTotal,playerHandTotal)
+
+# player does NOT have blackjack, but dealer DOES
+if PlayerBJ != True and DealerBJ == True:
+    end_of_hand(dealerTotal,playerHandTotal)
+
+# neither player or dealer have blackjack
+if PlayerBJ != True and DealerBJ != True:
+    deck, PlayerHand, playerHandTotal, handAlive = play_hand(deck,PlayerHand,PlayerValues,playerHandTotal)
+    if handAlive == True:
+        deck,DealerHand,DealerValues,dealerTotal = dealer_action_s17(deck,DealerHand,DealerValues,dealerTotal)
         end_of_hand(dealerTotal,playerHandTotal)
     else:
-        # neither player has blackjack
-        deck, PlayerHand, playerHandTotal, alive_bust = play_hand(deck,PlayerHand,playerHandTotal)
-
-# dealer showing Ace        
-elif card_value(DealerHand[0]) == 11:
-    playerBJ = False
-    insurance = offer_insurance()
-    # no one takes insurance
-    if insurance != "Y":
-        if dealer_check_hole_card(DealerHand,dealerTotal) == "Home":
-            #dealer has Ace-up blackjack
-            end_of_hand(dealerTotal,playerHandTotal)
-        else: 
-            # dealer does not have Ace-up blackjack
-            deck, PlayerHand, playerHandTotal, alive_bust = play_hand(deck,PlayerHand,playerHandTotal)
-    elif insurance != "Y": 
-        print("[Insurance was taken]")
-else: 
-    playerBJ = False
-    deck, PlayerHand, playerHandTotal, alive_bust = play_hand(deck,PlayerHand,playerHandTotal)
-
-if alive_bust == "alive" and not playerBJ:
-    deck, DealerHand, dealerTotal = dealer_action_s17(deck,DealerHand,dealerTotal)
-    
-end_of_hand(dealerTotal,playerHandTotal)
+        end_of_hand(dealerTotal,playerHandTotal)
