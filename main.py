@@ -45,6 +45,13 @@ def simplify_aces(currValues,currHandSum):
 #     num_aces = sum(1 for card in hand if str(card)[2:-3] == 'A')
 #     return num_aces
 
+def displayValue(hand,currHandSum):
+    if 11 in hand and currHandSum !=21:
+        displayTotal = f"{currHandSum-10}/{currHandSum}"
+    else: 
+        displayTotal = currHandSum
+    return displayTotal
+
 def next_card(shoe,currHand,currValues,currHandSum):
     pulled_card = shoe.pop()
     currHand.append(pulled_card)
@@ -84,7 +91,7 @@ def check_dealer_blackjack(DealerHand,dealerTotal):
         print("Checking hole card...")
         time.sleep(1)
         if dealerTotal == 21:
-            print(f"Dealer: {dealerTotal} | {DealerHand}")
+            print(f"Dealer: {dealerTotal} | {displayValue(DealerHand,dealerTotal)}")
             print("Ouch! Dealer has Blackjack 😡")
             return True
         else:
@@ -127,12 +134,12 @@ def end_of_hand(dealerTotal,playerHandTotal): # block that compares scores and a
 
 def play_hand(deck,PlayerHand,currValues,playerHandTotal): # block of code that defines the playing of a hand
     while playerHandTotal <= 21:
-        playerAction = input(f"Hand total: {playerHandTotal} - Hit or Stand? ")
-        if playerAction == "Hit":
+        playerAction = input(f"Hand total: {displayValue(currValues,playerHandTotal)} - Hit or Stand? ").lower()
+        if ('h') in playerAction:
             deck, PlayerHand, currValues, playerHandTotal = player_hit(deck,PlayerHand,currValues,playerHandTotal)
-            print(f"PlayerHand: {PlayerHand} | {playerHandTotal}")
+            print(f"Player: {PlayerHand} | {displayValue(currValues,playerHandTotal)}")
             time.sleep(1)
-        else: # playerAction = STAND
+        elif ('s') in playerAction: # playerAction = STAND
             handAlive = True
             return deck, PlayerHand, playerHandTotal, handAlive  
     if playerHandTotal > 21:
@@ -144,21 +151,21 @@ def play_hand(deck,PlayerHand,currValues,playerHandTotal): # block of code that 
 def dealer_action_s17(deck,DealerHand,currValues,dealerTotal): 
     print("Flipping dealer's hole card...")
     time.sleep(1)
-    print(f"Dealer hand: {DealerHand} | {dealerTotal}")
+    print(f"Dealer hand: {DealerHand} | {displayValue(DealerValues,dealerTotal)}")
     while dealerTotal < 17:
         print(f"Dealer has {dealerTotal}, dealer hits...")
         time.sleep(1)
-        deck, DealerHand, dealerTotal = player_hit(deck,DealerHand,dealerTotal)
-        print(DealerHand," | ",dealerTotal)
+        deck, DealerHand, currValues, dealerTotal = player_hit(deck,DealerHand,currValues,dealerTotal)
+        print(f"Dealer hand: {DealerHand} | {displayValue(currValues,dealerTotal)}")
         time.sleep(1)
     if dealerTotal >= 17 and dealerTotal <= 21:
         # print(deck)
         # print(DealerHand)
         # print(dealerTotal)
-        return deck, DealerHand, dealerTotal
+        return deck, DealerHand, currValues, dealerTotal
     if dealerTotal > 21:
         print("Dealer BUSTS!")
-        return deck, DealerHand, dealerTotal
+        return deck, DealerHand, currValues, dealerTotal
 
 # pulls card from shoe and appends it to player's hand
 def player_hit(deck,PlayerHand,currValues,playerHandTotal):
@@ -171,20 +178,20 @@ def player_hit(deck,PlayerHand,currValues,playerHandTotal):
 
 ### Main Program ###
 
-# cardRanks = [2,3,4,5,6,7,8,9,10,'J','Q','K','A'] # true deck
-cardRanks = [9,'A'] # test for Ace logic
+cardRanks = [2,3,4,5,6,7,8,9,10,'J','Q','K','A'] # true deck
+# cardRanks = [9,'A'] # test for Ace logic
 deck = create_deck(cardRanks)
 
 # deal cards to player and dealer
 DealerHand, dealerTotal, DealerValues, PlayerHand, playerHandTotal, PlayerValues = deal(deck)
 
 print(f"Dealer: {DealerHand[0]} | {card_value(DealerHand[0],dealerTotal)}") # dealer has a fair hand
-print(f"PlayerHand: {PlayerHand} | {playerHandTotal}")
+print(f"Player: {PlayerHand} | {displayValue(PlayerValues,playerHandTotal)}")
 
 PlayerBJ = check_player_blackjack(playerHandTotal)
 DealerBJ = check_dealer_blackjack(DealerHand,dealerTotal)
-
 time.sleep(1)
+
 ### Procedures for when someone has Blackjack ###
 
 # player has blackjack, dealer does not
