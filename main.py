@@ -91,8 +91,8 @@ def check_dealer_blackjack(DealerHand,dealerTotal):
         print("Checking hole card...")
         time.sleep(1)
         if dealerTotal == 21:
-            print(f"Dealer: {dealerTotal} | {displayValue(DealerHand,dealerTotal)}")
             print("Ouch! Dealer has Blackjack 😡")
+            print(f"Dealer: {DealerHand} | {displayValue(DealerHand,dealerTotal)}")
             return True
         else:
             print("Dealer does not have Blackjack.")
@@ -132,23 +132,52 @@ def end_of_hand(dealerTotal,playerHandTotal): # block that compares scores and a
     # reset_hand() # not yet defined
     # playerHandTotal = 0
 
-def play_hand(deck,PlayerHand,currValues,playerHandTotal): # block of code that defines the playing of a hand
+def play_hand(deck,PlayerHand,currValues,playerHandTotal,canDouble): # block of code that defines the playing of a hand
     while playerHandTotal <= 21:
-        playerAction = input(f"Hand total: {displayValue(currValues,playerHandTotal)} - Hit or Stand? ").lower()
-        if ('h') in playerAction:
-            deck, PlayerHand, currValues, playerHandTotal = player_hit(deck,PlayerHand,currValues,playerHandTotal)
-            print(f"Player: {PlayerHand} | {displayValue(currValues,playerHandTotal)}")
-            time.sleep(1)
-        elif ('s') in playerAction: # playerAction = STAND
-            handAlive = True
-            return deck, PlayerHand, playerHandTotal, handAlive  
+
+        # CAN Double
+        if canDouble == True:
+            playerAction = input(f"Hand total: {displayValue(currValues,playerHandTotal)} - Hit/Stand/Double? ").lower()
+            if ('h') in playerAction: # playerAction == HIT
+                canDouble = False
+                deck, PlayerHand, currValues, playerHandTotal = player_hit(deck,PlayerHand,currValues,playerHandTotal)
+                print(f"Player: {PlayerHand} | {displayValue(currValues,playerHandTotal)}")
+                time.sleep(1)
+            elif ('s') in playerAction: # playerAction == STAND
+                handAlive = True
+                return deck, PlayerHand, playerHandTotal, handAlive
+            elif ('do') in playerAction: # playerAction == DOUBLE
+                print("Doubley-Do! Good luck...")
+                time.sleep(1)
+                deck, PlayerHand, currValues, playerHandTotal = player_hit(deck,PlayerHand,currValues,playerHandTotal)
+                time.sleep(1)
+                print(f"Player: {PlayerHand} | {displayValue(currValues,playerHandTotal)}")
+                if playerHandTotal <= 21:
+                    handAlive = True
+                    return deck, PlayerHand, playerHandTotal, canDouble,handAlive
+                else: 
+                    handAlive = False
+                    return deck, PlayerHand, playerHandTotal, canDouble==False,handAlive
+                
+        
+        # CANNOT Double
+        elif canDouble == False: 
+            playerAction = input(f"Hand total: {displayValue(currValues,playerHandTotal)} - Hit/Stand? ").lower()
+            if ('h') in playerAction: # playerAction == HIT
+                deck, PlayerHand, currValues, playerHandTotal = player_hit(deck,PlayerHand,currValues,playerHandTotal)
+                print(f"Player: {PlayerHand} | {displayValue(currValues,playerHandTotal)}")
+                time.sleep(1)
+            elif ('s') in playerAction: # playerAction == STAND
+                handAlive = True
+                return deck, PlayerHand, playerHandTotal, handAlive
     if playerHandTotal > 21:
         print("BUST!")
         handAlive = False
         return deck, PlayerHand,playerHandTotal, handAlive
 
+
 # dealer hitting actions for Stand 17 rule variations
-def dealer_action_s17(deck,DealerHand,currValues,dealerTotal): 
+def dealer_action_s17(deck,DealerHand,currValues,dealerTotal):
     print("Flipping dealer's hole card...")
     time.sleep(1)
     print(f"Dealer hand: {DealerHand} | {displayValue(DealerValues,dealerTotal)}")
@@ -208,7 +237,8 @@ if PlayerBJ != True and DealerBJ == True:
 
 # neither player or dealer have blackjack
 if PlayerBJ != True and DealerBJ != True:
-    deck, PlayerHand, playerHandTotal, handAlive = play_hand(deck,PlayerHand,PlayerValues,playerHandTotal)
+    canDouble = True
+    deck, PlayerHand, playerHandTotal,canDouble, handAlive = play_hand(deck,PlayerHand,PlayerValues,playerHandTotal,canDouble)
     if handAlive == True:
         deck,DealerHand,DealerValues,dealerTotal = dealer_action_s17(deck,DealerHand,DealerValues,dealerTotal)
         end_of_hand(dealerTotal,playerHandTotal)
