@@ -145,16 +145,16 @@ def play_hand(deck,PlayerHand,currValues,playerHandTotal,canDouble): # block of 
                 time.sleep(1)
             elif ('s') in playerAction: # playerAction == STAND
                 handAlive = True
-                return deck, PlayerHand, playerHandTotal, handAlive
+                return deck, PlayerHand, playerHandTotal,canDouble==False,handAlive
             elif ('do') in playerAction: # playerAction == DOUBLE
                 print("Doubley-Do! Good luck...")
-                time.sleep(1)
                 deck, PlayerHand, currValues, playerHandTotal = player_hit(deck,PlayerHand,currValues,playerHandTotal)
                 time.sleep(1)
                 print(f"Player: {PlayerHand} | {displayValue(currValues,playerHandTotal)}")
+                time.sleep(1)
                 if playerHandTotal <= 21:
                     handAlive = True
-                    return deck, PlayerHand, playerHandTotal, canDouble,handAlive
+                    return deck, PlayerHand, playerHandTotal, canDouble==False,handAlive
                 else: 
                     handAlive = False
                     return deck, PlayerHand, playerHandTotal, canDouble==False,handAlive
@@ -169,11 +169,11 @@ def play_hand(deck,PlayerHand,currValues,playerHandTotal,canDouble): # block of 
                 time.sleep(1)
             elif ('s') in playerAction: # playerAction == STAND
                 handAlive = True
-                return deck, PlayerHand, playerHandTotal, handAlive
+                return deck, PlayerHand, playerHandTotal, canDouble==False, handAlive
     if playerHandTotal > 21:
         print("BUST!")
         handAlive = False
-        return deck, PlayerHand,playerHandTotal, handAlive
+        return deck, PlayerHand,playerHandTotal, canDouble==False, handAlive
 
 
 # dealer hitting actions for Stand 17 rule variations
