@@ -1,7 +1,0 @@
-<!-- About page-->
-
-{% extends "base.html" %}
-{% block title %}PDD: About{% endblock %}
-{% block content %}
-<h1>About Project Double-Down</h1>
-{% endblock %}
