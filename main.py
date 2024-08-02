@@ -231,9 +231,23 @@ def split_hand(deck,playerHand):
     hand2,hand2Total,hand2Values = next_card(shoe,hand2,hand2Values,hand2Sum)
     print(f"Player Hand1: {hand1} | {displayValue(hand1Values,hand1Total)}")
     print(f"Player Hand2: {hand2} | {displayValue(hand2Values,hand2Total)}")
-    activeHands += 1
-    return activeHands,hand1,hand1Total,hand1Values,hand2,hand2Total,hand2Values
 
+    splitted_hands = [    
+        {'hand': hand1, 'handValues': hand1Values, 'handTotal': hand1Total},
+        {'hand': hand2, 'handValues': hand2Values, 'handTotal': hand2Total}
+    ]
+
+    for split in splitted_hands:
+        shoe = shoe
+        PlayerHand = split['hand']
+        currValues = split['handValues']
+        playerHandTotal = split['handTotal']
+        play_hand(shoe,PlayerHand,currValues,playerHandTotal)
+        
+        # ADD print functions for (hand1 result: score)
+    
+    # return activeHands,hand1,hand1Total,hand1Values,hand2,hand2Total,hand2Values
+        # needs to return expected values for what is calling this
 
 
 
