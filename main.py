@@ -44,7 +44,6 @@ def next_card(shoe,currHand,currValues,currHandSum):
     cardValue = card_value(pulled_card)
     currValues.append(cardValue)
     currHandSum += cardValue
-    # currHandSum = decrease_last_ace(currHand,currHandSum, 1 if cardValue == 11 else 0)
     if currHandSum > 21:
         currValues, currHandSum = simplify_aces(currValues,currHandSum)
     
@@ -128,11 +127,11 @@ def end_of_hand(dealerTotal,DealerHand,list_playerHands): # block that compares 
     print(f"Dealer: {dealerTotal} | {DealerHand}")
     for player in list_playerHands:
         if dealerTotal > 21 or (player['handTotal'] > dealerTotal and player['handTotal'] <=21):
-            print(f"Player{player['index']+1}: {player['handTotal']} | WIN {player['cards']}")
+            print(f"Player{player['index']}: {player['handTotal']} | WIN {player['cards']}")
         elif dealerTotal == player['handTotal']:
-            print(f"Player{player['index']+1}: {player['handTotal']} | PUSH {player['cards']}")
+            print(f"Player{player['index']}: {player['handTotal']} | PUSH {player['cards']}")
         else:
-            print(f"Player{player['index']+1}: {player['handTotal']} | LOSS {player['cards']}")
+            print(f"Player{player['index']}: {player['handTotal']} | LOSS {player['cards']}")
         time.sleep(1)
     # if dealer busts or player > dealer
     # if dealerTotal > 21 or (playerHandTotal > dealerTotal and playerHandTotal <= 21):
@@ -149,7 +148,7 @@ def get_player_decision(player):
         if len(player['cards']) == 2:
             if str(player['cards'][0])[2:-3] == str(player['cards'][1])[2:3]:
                 # player has pair, can split
-                playerAction = input(f"Player{player['index']+1} hand total: {displayValue(player['handValues'], player['handTotal'])} - Hit/Stand/Double/Split? ").lower()
+                playerAction = input(f"Player{player['index']} hand total: {displayValue(player['handValues'], player['handTotal'])} - Hit/Stand/Double/Split? ").lower()
                 if ('h') in playerAction: 
                     decision = "Hit"
                 elif ('st') in playerAction:
@@ -160,7 +159,7 @@ def get_player_decision(player):
                     decision = "Split"
                 return decision
             else: # player does not have a pair, cannot split
-                playerAction = input(f"Player{player['index']+1} hand total: {displayValue(player['handValues'], player['handTotal'])} - Hit/Stand/Double? ").lower()
+                playerAction = input(f"Player{player['index']} hand total: {displayValue(player['handValues'], player['handTotal'])} - Hit/Stand/Double? ").lower()
                 if ('h') in playerAction: 
                     decision = "Hit"
                 elif ('st') in playerAction:
@@ -170,7 +169,7 @@ def get_player_decision(player):
                 return decision
             
         else: # player has more than 2 cards, cannot split or double
-            playerAction = input(f"Player{player['index']+1} hand total: {displayValue(player['handValues'], player['handTotal'])} - Hit/Stand? ").lower()
+            playerAction = input(f"Player{player['index']} hand total: {displayValue(player['handValues'], player['handTotal'])} - Hit/Stand? ").lower()
             if ('h') in playerAction: 
                 decision = "Hit"
             elif ('st') in playerAction:
@@ -178,41 +177,47 @@ def get_player_decision(player):
             return decision
 
 
-def play_hand(deck,player): # block of code that defines the playing of a hand
+def play_hand(deck,list_ActivePlayers): # block of code that defines the playing of a hand
     
-    while player['handTotal'] <= 21:
+    for player in list_ActivePlayers:
 
-        action = get_player_decision(player)
-        if action == "Hit":
-            deck, player = player_hit(deck,player)
-            print(f"Player {player['index']+1}: {player['cards']} | {displayValue(player['handValues'],player['handTotal'])}")
-            time.sleep(1)
-        elif action == "Stand":
-            player['handAlive'] = True
-            return deck, player
-        elif action == "Double":
-            print("Doubley-Do! Good luck...")
-            time.sleep(1)
-            # deck, PlayerHand, currValues, playerHandTotal = player_hit(deck,PlayerHand,currValues,playerHandTotal)
-            deck, player = player_hit(deck,player)
-            print(f"Player {player['index']+1}: {player['cards']} | {displayValue(player['handValues'],player['handTotal'])}")
-            time.sleep(1)
-            if player['handTotal'] <= 21:
+        while player['handTotal'] <= 21:
+
+            action = get_player_decision(player)
+            if action == "Hit":
+                deck, player = player_hit(deck,player)
+                print(f"Player {player['index']}: {player['cards']} | {displayValue(player['handValues'],player['handTotal'])}")
+                time.sleep(1)
+            elif action == "Stand":
                 player['handAlive'] = True
-                return deck, player
-            else: 
-                player['handAlive'] = False
-                return deck, player
-        elif action == "Split":
-            print("Splitting hands, good luck!")
-            time.sleep(1)
-            split_hand(deck,player)
+                break
+                # return deck, player
+            elif action == "Double":
+                print("Doubley-Do! Good luck...")
+                time.sleep(1)
+                # deck, PlayerHand, currValues, playerHandTotal = player_hit(deck,PlayerHand,currValues,playerHandTotal)
+                deck, player = player_hit(deck,player)
+                print(f"Player {player['index']}: {player['cards']} | {displayValue(player['handValues'],player['handTotal'])}")
+                time.sleep(1)
+                if player['handTotal'] <= 21:
+                    player['handAlive'] = True
+                    break
+                    # return deck, player
+                else: 
+                    player['handAlive'] = False
+                    break
+                    # return deck, player
+            elif action == "Split":
+                print("Splitting hands, good luck!")
+                time.sleep(1)
+                list_ActivePlayers = split_hand(deck,list_ActivePlayers.index(player),list_ActivePlayers)
+                
+        
+        if player['handTotal'] > 21:
+            print("BUST!")
+            player['handAlive'] = False
             break
-       
-    if player['handTotal'] > 21:
-        print("BUST!")
-        player['handAlive'] = False
-        return deck,player
+            # return deck,player
 
 
 # dealer hitting actions for Stand 17 rule variations
@@ -240,34 +245,42 @@ def player_hit(deck,player):
     
 
 # split hands
-def split_hand(deck,player):
-    hand1 = []
-    hand1Values = []
-    hand1.append(playerHand[0])
-    hand1Values.append(card_value(hand1[0]))
-    hand1Sum = card_value(hand1[0])
-    hand2 = []
-    hand2Values = []
-    hand2.append(playerHand[1])
-    hand2Values.append(card_value(hand2[0]))
-    hand2Sum = card_value(hand2[0])
+def split_hand(deck,playerIndex,list_ActivePlayers):
+    list_ActivePlayers.insert(playerIndex+1,
+                              {'index': f"{playerIndex+1}sp",
+                               'cards': [], # list_ActivePlayers[(int(playerIndex)-1)]['cards'][0],
+                               'handValues': [], # list_ActivePlayers[(int(playerIndex)-1)]['handValues'][0],
+                               'handTotal': 0,
+                               'hasBJ': False,
+                               'handAlive': True
+                                                       })
+    list_ActivePlayers[(playerIndex+1)]['cards'].append(list_ActivePlayers[playerIndex]['cards'].pop(1))
+    list_ActivePlayers[(playerIndex+1)]['handValues'].append(list_ActivePlayers[playerIndex]['handValues'].pop(1))
+
+    # update original hands' handTotal
+    list_ActivePlayers[(playerIndex)]['handTotal'] -= int((list_ActivePlayers[int(playerIndex)]['handTotal']) / 2)
+
+    list_ActivePlayers[(playerIndex+1)]['handTotal'] = card_value(list_ActivePlayers[(playerIndex+1)]['cards'][0])
+    # hand1Values = []
+    # hand1.append(playerHand[0])
+    # hand1Values.append(card_value(hand1[0]))
+    # hand1Sum = card_value(hand1[0])
+    # hand2 = []
+    # hand2Values = []
+    # hand2.append(playerHand[1])
+    # hand2Values.append(card_value(hand2[0]))
+    # hand2Sum = card_value(hand2[0])
     shoe = deck
-    hand1,hand1Total,hand1Values = next_card(shoe,hand1,hand1Values,hand1Sum)
-    hand2,hand2Total,hand2Values = next_card(shoe,hand2,hand2Values,hand2Sum)
-    print(f"Player Hand1: {hand1} | {displayValue(hand1Values,hand1Total)}")
-    print(f"Player Hand2: {hand2} | {displayValue(hand2Values,hand2Total)}")
+    list_ActivePlayers[(playerIndex)]['cards'],list_ActivePlayers[(playerIndex)]['handTotal'],list_ActivePlayers[(playerIndex)]['handValues'] = next_card(shoe,list_ActivePlayers[(playerIndex)]['cards'],list_ActivePlayers[(playerIndex)]['handValues'],list_ActivePlayers[(playerIndex)]['handTotal'])
 
-    splitted_hands = [    
-        {'hand': hand1, 'handValues': hand1Values, 'handTotal': hand1Total},
-        {'hand': hand2, 'handValues': hand2Values, 'handTotal': hand2Total}
-    ]
+    list_ActivePlayers[(playerIndex+1)]['cards'],list_ActivePlayers[(playerIndex+1)]['handTotal'],list_ActivePlayers[(playerIndex+1)]['handValues'] = next_card(shoe,list_ActivePlayers[int(playerIndex+1)]['cards'],list_ActivePlayers[(playerIndex+1)]['handValues'],list_ActivePlayers[(playerIndex+1)]['handTotal'])
 
-    for split in splitted_hands:
-        shoe = shoe
-        PlayerHand = split['hand']
-        currValues = split['handValues']
-        playerHandTotal = split['handTotal']
-        play_hand(shoe,PlayerHand,currValues,playerHandTotal)
+    # hand2,hand2Total,hand2Values = next_card(shoe,hand2,hand2Values,hand2Sum)
+    for player in list_ActivePlayers[:2]:
+        print(f"Player {player['index']}: {player['cards']} | {displayValue(player['handValues'],player['handTotal'])}")
+        time.sleep(1)
+    
+    return list_ActivePlayers
         
 
         # global "playerHandTotal" is not being updated, need way to exit loop of play_hand
@@ -280,14 +293,16 @@ def split_hand(deck,player):
 
 ### Main Program ###
 
-numberOfPlayers = int(input(f"How many players this hand? " ))
+numberOfPlayers = 1 
+# int(input(f"How many players this hand? " ))
+
 keys = ['index','cards','handValues','handTotal']
 list_playerHands = []
 for i in range(numberOfPlayers):
     playerHand = {}
     for key in keys:
         if key == 'index':
-            playerHand[key] = i
+            playerHand[key] = str(i+1)
         elif key == 'cards':
             playerHand[key] = []
         elif key == 'handValues':
@@ -296,8 +311,8 @@ for i in range(numberOfPlayers):
             playerHand[key] = 0
     list_playerHands.append(playerHand)
 
-cardRanks = [2,3,4,5,6,7,8,9,10,'J','Q','K','A'] # true deck
-# cardRanks = [9,'6'] # test for Ace logic
+# cardRanks = [2,3,4,5,6,7,8,9,10,'J','Q','K','A'] # true deck
+cardRanks = [9,'6'] # test for Ace logic
 deck = create_deck(cardRanks)
 
 # deal cards to player and dealer
@@ -305,7 +320,7 @@ DealerHand, dealerTotal, DealerValues = deal(deck,list_playerHands)
 
 print(f"Dealer: {DealerHand[0]} | {card_value(DealerHand[0])}") # dealer has a fair hand
 for player in list_playerHands:
-    print(f"Player {player['index']+1}: {player['cards']} | {displayValue(player['handValues'],player['handTotal'])}")
+    print(f"Player {player['index']}: {player['cards']} | {displayValue(player['handValues'],player['handTotal'])}")
 
 # check for player blackjacks
 for player in list_playerHands:
@@ -343,7 +358,7 @@ for player in list_playerHands:
 for player in list_playerHands:
 
     if player['hasBJ'] != True and DealerBJ != True:
-        deck, player = play_hand(deck,player)
+        play_hand(deck,list_playerHands)
 
         # if playerhandAlive == True:
         #     deck,DealerHand,DealerValues,dealerTotal = dealer_action_s17(deck,DealerHand,DealerValues,dealerTotal)
